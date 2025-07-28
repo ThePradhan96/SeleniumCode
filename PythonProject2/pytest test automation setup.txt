@@ -1,0 +1,111 @@
+your_project/
+│
+├── .venv/                         # Your virtual environment
+├── tests/
+│   ├── test_login.py             # Your Pytest test files
+│   ├── test_add_employer.py
+│   └── ...
+│
+├── pages/                        # Page Object Model (POM)
+│   ├── login_page.py
+│   ├── dashboard_page.py
+│   └── ...
+│
+├── utils/
+│   ├── driver_factory.py         # Manages driver creation, including multi-browser
+│   ├── config.py                 # Browser settings, environment variables
+│   └── ...
+│
+├── conftest.py                   # Pytest setup/teardown
+├── requirements.txt              # Dependencies
+└── pytest.ini                    # Pytest configuration
+
+
+Make sure its in .venv (virtual env - when you start the project 
+over there use the project .venv to make sure it runs in the vitual env
+in the pycharm terminal as well it should start with (.venv)
+
+1. pip install selenium webdriver-manager pytest
+
+2. to make the req. sheet do : pip freeze > requirement.txt 
+it will generate a req.txt file under your project
+it will have all the packages needed with their versions
+
+Note: you need to create python packages so that you can import
+DO NOT TOUCH THE .venv directory
+
+3. Create a utils package and put driver_factory.py which will have 
+all the install files for different browsers. (No need to install any external browser - drivers , this driver.py code will do the job)
+
+4. now create conftest.py which will have setup and teardown 
+(SEE COMMENTS INSIDE)
+
+5. now create the POM for different pages
+
+pip install webdriver-manaGER
+pip list | findstr webdriver
+
+#  look for confest.py 
+----------new confest ----------
+import pytest
+from utils.driver_factory import get_driver
+from pages.login_page import LoginPage
+from selenium.webdriver.support.ui import WebDriverWait
+
+Base_url = "https://staging.trsc.nic.in/finance/ehrmis/"
+
+def pytest_addoption(parser):
+    parser.addoption("--browser", action="store", default="chrome", help="Browser to run tests")
+
+@pytest.fixture(scope="session")
+def driver(request):
+    browser = request.config.getoption("--browser")
+    driver = get_driver(browser)
+    driver.get(Base_url)
+    driver.implicitly_wait(10)
+    yield driver
+    driver.quit()
+
+@pytest.fixture(scope="session")
+def login_successfully(driver):
+    login_page = LoginPage(driver)
+    login_page.enter_username("your_username")
+    login_page.enter_password("your_password")
+    login_page.enter_captcha("your_captcha")
+    login_page.click_login()
+    WebDriverWait(driver, 10).until(lambda d: "dashboard" in d.current_url.lower())
+    return driver
+
+
+-------------------------XXX------------------------------
+For each page of the application we create a new .py under pages-directory/folder file which will have 'SELECTORS' (path to a particular element) which the user needs to define .
+((NOTE :: FINDING THE PATH OF THE ELEMENT CAN BE TRICKY AT TIMES SO ONE CAN USE "SELECTORSHUB" EXTENSION FOR PATHING THE PATH, ORELSE YOU WILL HAVE TO LEARN SELENIUM SELECTORS.
+
+Once you've located the elements using selectors, you define METHODS that describe actions the user would take on that UI page. be it click , hover , type in etc
+
+----
+Once you've:
+
+Located the elements on a page using selectors, and
+
+Written methods to interact with them (like click, type, select),
+
+The next step is to create actual test cases that use those methods to simulate real user actions and validate if everything works as expected.
+
+In your tests/ directory (or any test folder), you create Python files that start with test_ (e.g., test_login.py, test_dashboard.py, test_add_employee.py).
+
+Each of these files contains test cases — small functions that:
+
+1. Open the browser using the shared driver fixture,
+
+2. Use the POM classes (like LoginPage, DashboardPage) to guide Selenium step-by-step,
+
+3. Verify if the expected behavior happens.
+
+---------XX---------
+run the test cases in the terminal in a virtual env- 
+
+eg- 
+(.venv) PS C:\Users\NIC\PycharmProjects\PythonProject3>
+ python -m pytest -s tests/test_allocate_items.py::TestAllocateItems::test_beneficiary_count_consistency_between_tabs --browser=edge
+
